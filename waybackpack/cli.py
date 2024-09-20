@@ -10,7 +10,7 @@ from .version import __version__
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="waybackpack")
 
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + __version__
