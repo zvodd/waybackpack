@@ -23,7 +23,7 @@ def search(
             "showDupeCount": "true",
             "output": "json",
             "collapse": collapse,
-            **({"matchType": matchType} if matchType is not None else {}),
+            "matchType": matchType,
         },
     )
     
