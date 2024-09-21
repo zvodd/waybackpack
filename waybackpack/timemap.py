@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 TIMEMAP_URL = "https://web.archive.org/web/timemap/cdx"
 
 
-#url=example.com&matchType=prefix&collapse=urlkey&output=json&fl=original%2Cmimetype%2Ctimestamp%2Cendtimestamp%2Cgroupcount%2Cuniqcount&filter=!statuscode%3A%5B45%5D..&limit=10000
+#url=example.com&matchType=prefix&collapse=urlkey&output=json&fl=original%2Cmimetype%2Ctimestamp%2Cendtimestamp%2Cgroupcount%2Cuniqcount&filter=!statuscode%3A%5B45%5D..
 
 def timemap(
     url, from_date=None, to_date=None, uniques_only=False, collapse=None, session=None, matchType=None
@@ -21,10 +21,11 @@ def timemap(
                 "url": url,
                 "from": from_date,
                 "to": to_date,
-                "showDupeCount": "true",
+                # "showDupeCount": "true",
                 "output": "json",
                 "collapse": collapse,
                 **({"matchType": matchType} if matchType is not None else {}),
+                "fl": "original,timestamp,endtimestamp,groupcount,uniqcount",
             },
         )
         

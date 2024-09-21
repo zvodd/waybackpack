@@ -2,6 +2,8 @@
 import argparse
 import logging
 
+from os.path import isfile
+
 from .cdx import search
 from .pack import Pack
 from .session import Session
@@ -16,14 +18,14 @@ def parse_args():
         "--version", action="version", version="%(prog)s " + __version__
     )
 
-    packgroup = parser.add_mutually_exclusive_group(required=True)
 
-    packgroup.add_argument("url", help="The URL of the resource you want to download.")
-    packgroup.add_argument(
+    parser.add_argument("url", help="The URL of the resource you want to download.")
+
+    parser.add_argument(
         "-f"
-        "--file-url-time",
-        help="A text file with each line \"<url> <timestamp>\"")
-
+        "--file",
+        action="store_true",
+        help="Treat positional argument as a file path to a file where each line is \"<url> <timestamp>\"")
 
     group = parser.add_mutually_exclusive_group(required=True)
 
@@ -135,7 +137,26 @@ def parse_args():
     )
 
     args = parser.parse_args()
-    return args
+
+    # Turn args into a dictionary
+    args = {**vars(args)}
+
+    args['file'] = None
+    
+    # Treat positional arguments as file path
+    if args["f__file"]:
+        # Remap args.url to args.file if args.file is set
+        args['file'] = args['url']
+        del args['f__file']
+        del args['url']
+
+        # Check args.url is a valid file path to an existing file or throw argument error
+        if not isfile(args['file']):
+            parser.error("The file path specified does not exist.")
+    
+
+    # Turn args back into a namespace
+    return argparse.Namespace(**args)
 
 
 def main():
@@ -153,34 +174,47 @@ def main():
         delay_retry=args.delay_retry,
     )
 
-    snapshots = search(
-        args.url,
-        session=session,
-        from_date=args.from_date,
-        to_date=args.to_date,
-        uniques_only=args.uniques_only,
-        collapse=args.collapse,
-        matchType=args.match_type,
-    )
+    # if args.timemap:
+    #     return
 
-    timestamps = [snap["timestamp"] for snap in snapshots]
-
-    pack = Pack(args.url, timestamps=timestamps, session=session)
+    packs = []
+    if args.file:
+        with open(args.file, 'r') as f:
+            for line in f:
+                url, timestamp = line.strip().split(' ')[:2]
+                packs.append(Pack(url, timestamps=[timestamp], session=session))
+        return
+    else:
+        snapshots = search(
+            args.url,
+            session=session,
+            from_date=args.from_date,
+            to_date=args.to_date,
+            uniques_only=args.uniques_only,
+            collapse=args.collapse,
+            matchType=args.match_type,
+        )
+        # import pprint; pprint.pprint(snapshots);
+        # import sys; sys.exit()
+        timestamps, url = [(snap["timestamp"],snap["original"]) for snap in snapshots]
+        packs = [Pack(url, timestamps=timestamps, session=session)]
 
     if args.dir:
-        pack.download_to(
-            args.dir,
-            raw=args.raw,
-            root=args.root,
-            ignore_errors=args.ignore_errors,
-            no_clobber=args.no_clobber,
-            progress=args.progress,
-            delay=args.delay,
-        )
+        for pack in packs:
+            pack.download_to(
+                args.dir,
+                raw=args.raw,
+                root=args.root,
+                ignore_errors=args.ignore_errors,
+                no_clobber=args.no_clobber,
+                progress=args.progress,
+                delay=args.delay,
+            )
     else:
-        flag = "id_" if args.raw else ""
-        urls = (a.get_archive_url(flag) for a in pack.assets)
-        print("\n".join(urls))
+        for pack in packs:
+            flag = "id_" if args.raw else ""
+            urls = (a.get_archive_url(flag) for a in pack.assets)
+            print("\n".join(urls))
 
 
 if __name__ == "__main__":
