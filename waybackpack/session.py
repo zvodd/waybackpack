@@ -25,14 +25,21 @@ class Session(object):
         headers = {
             "User-Agent": self.user_agent,
         }
+
+        req = requests.Request(
+            method='GET',
+            url=url,
+            headers=headers,
+            **kwargs
+        )
+        prepped = req.prepare()
+        
+        # To debug the request
+        #print(f"Complete URL: {prepped.url}")
+
         try:
-            res = requests.get(
-                url,
-                allow_redirects=self.follow_redirects,
-                headers=headers,
-                stream=True,
-                **kwargs
-            )
+            with requests.Session() as session:
+                res = session.send(prepped, allow_redirects=self.follow_redirects, stream=True)
 
             if int(res.status_code / 100) in [4, 5]:  # 4XX and 5XX codes
                 return False, res
