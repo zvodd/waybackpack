@@ -57,6 +57,13 @@ def parse_args():
     )
 
     parser.add_argument(
+        #"-m",
+        "--match-type",
+        choices=['exact', 'prefix', 'host', 'domain'],
+        help="The type of match to use when searching for snapshots. Must be one of 'exact', 'prefix', 'host' or 'domain'.",
+    )
+
+    parser.add_argument(
         "--user-agent",
         help="The User-Agent header to send along with your requests to the Wayback Machine. If possible, please include the phrase 'waybackpack' and your email address. That way, if you're battering their servers, they know who to contact. Default: '{0}'.".format(
             DEFAULT_USER_AGENT
@@ -146,6 +153,7 @@ def main():
         to_date=args.to_date,
         uniques_only=args.uniques_only,
         collapse=args.collapse,
+        matchType=args.match_type,
     )
 
     timestamps = [snap["timestamp"] for snap in snapshots]
