@@ -5,6 +5,7 @@ import logging
 from os.path import isfile
 
 from .cdx import search
+from .timemap import timemap
 from .pack import Pack
 from .session import Session
 from .settings import DEFAULT_ROOT, DEFAULT_USER_AGENT
@@ -26,6 +27,11 @@ def parse_args():
         "--file",
         action="store_true",
         help="Treat positional argument as a file path to a file where each line is \"<url> <timestamp>\"")
+
+    parser.add_argument(
+        "--timemap",
+         action="store_true",
+        help="Print the timemap of the URL.")
 
     group = parser.add_mutually_exclusive_group(required=True)
 
@@ -174,8 +180,23 @@ def main():
         delay_retry=args.delay_retry,
     )
 
-    # if args.timemap:
-    #     return
+    #essentially a seperate command
+    if args.timemap:
+        tsnapshots = timemap(
+            args.url,
+            session=session,
+            from_date=args.from_date,
+            to_date=args.to_date,
+            collapse=args.collapse,
+            matchType=args.match_type,
+        )
+        if args.dir:
+            #how should this function?
+            pass
+        else:
+            for snap in tsnapshots:
+                print("{0} {1}".format(snap["original"], snap["timestamp"]))
+        return
 
     packs = []
     if args.file:
@@ -183,7 +204,6 @@ def main():
             for line in f:
                 url, timestamp = line.strip().split(' ')[:2]
                 packs.append(Pack(url, timestamps=[timestamp], session=session))
-        return
     else:
         snapshots = search(
             args.url,
@@ -194,10 +214,8 @@ def main():
             collapse=args.collapse,
             matchType=args.match_type,
         )
-        # import pprint; pprint.pprint(snapshots);
-        # import sys; sys.exit()
-        timestamps, url = [(snap["timestamp"],snap["original"]) for snap in snapshots]
-        packs = [Pack(url, timestamps=timestamps, session=session)]
+        timestamps = [snap["timestamp"] for snap in snapshots]
+        packs = [Pack(args.url, timestamps=timestamps, session=session)]
 
     if args.dir:
         for pack in packs:
