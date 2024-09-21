@@ -16,7 +16,14 @@ def parse_args():
         "--version", action="version", version="%(prog)s " + __version__
     )
 
-    parser.add_argument("url", help="The URL of the resource you want to download.")
+    packgroup = parser.add_mutually_exclusive_group(required=True)
+
+    packgroup.add_argument("url", help="The URL of the resource you want to download.")
+    packgroup.add_argument(
+        "-f"
+        "--file-url-time",
+        help="A text file with each line \"<url> <timestamp>\"")
+
 
     group = parser.add_mutually_exclusive_group(required=True)
 
@@ -57,7 +64,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        #"-m",
+        "-m",
         "--match-type",
         choices=['exact', 'prefix', 'host', 'domain'],
         help="The type of match to use when searching for snapshots. Must be one of 'exact', 'prefix', 'host' or 'domain'.",

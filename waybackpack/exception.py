@@ -1,0 +1,2 @@
+class WaybackpackException(Exception):
+    pass
